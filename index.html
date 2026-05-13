@@ -1298,10 +1298,50 @@ function doLogout(){
 /* -- BLE ------------------------------------------------------------------- */
 async function doConnect(){
   setLoading("btn-connect",true);
-  var init;
-  try{init=await api(_s(23)+"?scooter_type="+_St,null);}
-  catch(e){console.error("[connect] ble_init failed:",e.message);toast(e.message,"err");setLoading("btn-connect",false);return;}
 
+  var init;
+  try {
+    init = await api(_s(23)+"?scooter_type="+_St, null);
+  } catch(e){
+    console.error("[connect] ble_init failed:", e.message);
+    toast(e.message,"err");
+    setLoading("btn-connect",false);
+    return;
+  }
+
+  try {
+    _Bd = await navigator.bluetooth.requestDevice({
+      filters:[
+        {services:["86531001-43e6-47b7-9cb0-5fc21d4ae340"]},
+        {services:["00001001-0000-1000-8000-00805f9b34fb"]},
+      ],
+      optionalServices:[
+        "86531001-43e6-47b7-9cb0-5fc21d4ae340",
+        "00001001-0000-1000-8000-00805f9b34fb",
+      ]
+    });
+
+    // ✅ ADD IT HERE (THIS IS THE CORRECT PLACE)
+    _Bd.addEventListener("gattserverdisconnected", () => {
+      console.log("BLE disconnected event fired");
+      toast("Scooter disconnected", "err");
+      // call your UI handler if you have one
+      // updateUIDisconnected("Lost BLE connection");
+    });
+
+    console.log("Device selected:", _Bd.name);
+
+    // IMPORTANT: actual connection step (if your code has it)
+    const server = await _Bd.gatt?.connect?.();
+    console.log("GATT connected:", server);
+
+  } catch(e){
+    console.error("[connect] BLE failed:", e.message);
+    toast(e.message,"err");
+  } finally {
+    setLoading("btn-connect",false);
+  }
+}
   try{
     _Bd=await navigator.bluetooth.requestDevice({
       filters:[
